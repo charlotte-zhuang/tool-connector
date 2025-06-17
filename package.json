@@ -41,6 +41,7 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.1",
     "electron-squirrel-startup": "^1.0.1",
+    "electron-store": "^10.1.0",
     "express": "^5.1.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",

@@ -7,9 +7,6 @@
     "esModuleInterop": true,
     "sourceMap": true,
     "baseUrl": ".",
-    "paths": {
-      "@/*": ["src/*"]
-    },
     "outDir": "dist",
     "moduleResolution": "nodenext",
     "resolveJsonModule": true,

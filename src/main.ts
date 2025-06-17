@@ -1,20 +1,38 @@
-import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
-import { app, BrowserWindow } from "electron";
+import { app, BrowserWindow, ipcMain, IpcMainInvokeEvent } from "electron";
 import started from "electron-squirrel-startup";
-import express, { Request, Response } from "express";
 import path from "node:path";
-import createMcpServer from "./create-mcp-server";
+import { createServer } from "./server";
+import type { AppStoreValue } from "./store";
+import Store from "electron-store";
+import { Configs } from "./configs";
+import type { ElectronApi, ElectronApiChannel } from "./api";
 
-const expressApp = express();
+const store = new Store<AppStoreValue>({
+  defaults: { configs: {} },
+});
 
-expressApp.use(express.json());
+let cleanupServer: ReturnType<typeof createServer> | null = null;
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
   app.quit();
 }
 
-const createWindow = () => {
+// IPC handlers
+
+function handleGetConfigs(): Configs {
+  return store.get("configs");
+}
+
+function handleSetConfigs(_event: IpcMainInvokeEvent, configs: Configs): void {
+  store.set("configs", configs);
+  cleanupServer?.();
+  cleanupServer = createServer({ store });
+}
+
+// Setup
+
+function createWindow(): void {
   // Create the browser window.
   const mainWindow = new BrowserWindow({
     width: 800,
@@ -27,20 +45,44 @@ const createWindow = () => {
   // and load the index.html of the app.
   if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
     mainWindow.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL);
+
+    // Open the DevTools.
+    mainWindow.webContents.openDevTools();
   } else {
     mainWindow.loadFile(
       path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`)
     );
   }
 
-  // Open the DevTools.
-  mainWindow.webContents.openDevTools();
-};
+  cleanupServer?.();
+  cleanupServer = createServer({ store });
+}
+
+type MaybeAwaited<T> = T extends Promise<unknown> ? T | Awaited<T> : T;
+
+type ElectronApiHandler<T extends keyof ElectronApi> = (
+  event: IpcMainInvokeEvent,
+  ...args: Parameters<ElectronApi[T]>
+) => MaybeAwaited<ReturnType<ElectronApi[T]>>;
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
-app.on("ready", createWindow);
+app.on("ready", () => {
+  // Register IPC handlers
+  ipcMain.handle(
+    "get-configs" satisfies ElectronApiChannel,
+    handleGetConfigs satisfies ElectronApiHandler<"getConfigs">
+  );
+
+  ipcMain.handle(
+    "set-configs" satisfies ElectronApiChannel,
+    handleSetConfigs satisfies ElectronApiHandler<"setConfigs">
+  );
+
+  // Create the browser window.
+  createWindow();
+});
 
 // Quit when all windows are closed, except on macOS. There, it's common
 // for applications and their menu bar to stay active until the user quits
@@ -49,6 +91,8 @@ app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {
     app.quit();
   }
+
+  cleanupServer?.();
 });
 
 app.on("activate", () => {
@@ -57,57 +101,4 @@ app.on("activate", () => {
   if (BrowserWindow.getAllWindows().length === 0) {
     createWindow();
   }
-});
-
-expressApp.post("/mcp", async (req: Request, res: Response) => {
-  // In stateless mode, create a new instance of transport and server for each request
-  // to ensure complete isolation. A single instance would cause request ID collisions
-  // when multiple clients connect concurrently.
-
-  const mcpServer = createMcpServer();
-
-  const transport = new StreamableHTTPServerTransport({
-    sessionIdGenerator: undefined,
-  });
-
-  res.on("close", () => {
-    transport.close();
-    mcpServer.close();
-  });
-  await mcpServer.connect(transport);
-  await transport.handleRequest(req, res, req.body);
-});
-
-expressApp.get("/mcp", async (_req: Request, res: Response) => {
-  console.log("Received GET MCP request");
-  res.writeHead(405).end(
-    JSON.stringify({
-      jsonrpc: "2.0",
-      error: {
-        code: -32000,
-        message: "Method not allowed.",
-      },
-      id: null,
-    })
-  );
-});
-
-expressApp.delete("/mcp", async (_req: Request, res: Response) => {
-  console.log("Received DELETE MCP request");
-  res.writeHead(405).end(
-    JSON.stringify({
-      jsonrpc: "2.0",
-      error: {
-        code: -32000,
-        message: "Method not allowed.",
-      },
-      id: null,
-    })
-  );
-});
-
-// Start the express server
-const PORT = 3002;
-expressApp.listen(PORT, () => {
-  console.log(`Tool connector listening on port ${PORT}`);
 });
