@@ -1,11 +1,18 @@
+import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { app, BrowserWindow } from "electron";
+import started from "electron-squirrel-startup";
+import express, { Request, Response } from "express";
 import path from "node:path";
-// import started from "electron-squirrel-startup";
+import createMcpServer from "./create-mcp-server";
+
+const expressApp = express();
+
+expressApp.use(express.json());
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
-// if (started) {
-//   app.quit();
-// }
+if (started) {
+  app.quit();
+}
 
 const createWindow = () => {
   // Create the browser window.
@@ -52,60 +59,26 @@ app.on("activate", () => {
   }
 });
 
-// In this file you can include the rest of your app's specific main process
-// code. You can also put them in separate files and import them here.
-import express, { Request, Response } from "express";
-
-const expressApp = express();
-
-expressApp.use(express.json());
-
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { z } from "zod";
-import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
-
 expressApp.post("/mcp", async (req: Request, res: Response) => {
   // In stateless mode, create a new instance of transport and server for each request
   // to ensure complete isolation. A single instance would cause request ID collisions
   // when multiple clients connect concurrently.
 
-  console.log("creating server");
+  const mcpServer = createMcpServer();
 
-  const server = new McpServer({
-    name: "Echo",
-    version: "1.0.0",
+  const transport = new StreamableHTTPServerTransport({
+    sessionIdGenerator: undefined,
   });
 
-  server.registerTool(
-    "echo",
-    {
-      description: "Echoes back the input",
-      inputSchema: {
-        message: z.string().describe("Message to echo"),
-      },
-    },
-    (args) => {
-      const validatedArgs = args;
-      return {
-        content: [{ type: "text", text: `Echo: ${validatedArgs.message}` }],
-      };
-    }
-  );
-
-  const transport: StreamableHTTPServerTransport =
-    new StreamableHTTPServerTransport({
-      sessionIdGenerator: undefined,
-    });
   res.on("close", () => {
-    console.log("Request closed");
     transport.close();
-    server.close();
+    mcpServer.close();
   });
-  await server.connect(transport);
+  await mcpServer.connect(transport);
   await transport.handleRequest(req, res, req.body);
 });
 
-expressApp.get("/mcp", async (req: Request, res: Response) => {
+expressApp.get("/mcp", async (_req: Request, res: Response) => {
   console.log("Received GET MCP request");
   res.writeHead(405).end(
     JSON.stringify({
@@ -119,7 +92,7 @@ expressApp.get("/mcp", async (req: Request, res: Response) => {
   );
 });
 
-expressApp.delete("/mcp", async (req: Request, res: Response) => {
+expressApp.delete("/mcp", async (_req: Request, res: Response) => {
   console.log("Received DELETE MCP request");
   res.writeHead(405).end(
     JSON.stringify({
@@ -133,8 +106,8 @@ expressApp.delete("/mcp", async (req: Request, res: Response) => {
   );
 });
 
-// Start the server
+// Start the express server
 const PORT = 3002;
 expressApp.listen(PORT, () => {
-  console.log(`MCP Stateless Streamable HTTP Server listening on port ${PORT}`);
+  console.log(`Tool connector listening on port ${PORT}`);
 });
