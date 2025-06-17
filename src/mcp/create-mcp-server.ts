@@ -1,9 +1,10 @@
+import { Configs } from "src/configs";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import z from "zod";
 
-export default function createMcpServer() {
+export default function createMcpServer({}: { configs: Configs }) {
   const server = new McpServer({
-    name: "Echo",
+    name: "tool-connector",
     version: "1.0.0",
   });
 
