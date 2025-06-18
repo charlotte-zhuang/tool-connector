@@ -48,3 +48,13 @@ Add to your settings JSON file or \`.vscode/mcp.json\` (omit "mcp" when adding t
 \`\`\`
 `.trim();
 }
+
+export function createLocalMcpUrlUsageInstructions({ port }: Args): string {
+  return `
+If your app supports integrating with a local MCP server via a URL, simply provide this URL:
+
+\`\`\`text
+http://localhost:${port}/mcp
+\`\`\`
+`.trim();
+}
