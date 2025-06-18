@@ -1,4 +1,4 @@
-import { Configs } from "src/configs";
+import { Configs } from "@/configs";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import z from "zod";
 

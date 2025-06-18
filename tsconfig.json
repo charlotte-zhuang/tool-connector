@@ -8,6 +8,9 @@
     "sourceMap": true,
     "baseUrl": ".",
     "outDir": "dist",
+    "paths": {
+      "@/*": ["./src/*"]
+    },
     "moduleResolution": "nodenext",
     "resolveJsonModule": true,
     "jsx": "react-jsx",
