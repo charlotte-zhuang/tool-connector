@@ -7,14 +7,14 @@ export default defineConfig({
   base: "./", // Important for Electron
   resolve: {
     alias: {
-      "@": resolve(__dirname, "./src"),
+      "@": resolve(__dirname, "..", "src"),
     },
   },
   build: {
     outDir: "dist-renderer",
     rollupOptions: {
       input: {
-        main: resolve(__dirname, "index.html"),
+        main: resolve(__dirname, "..", "index.html"),
       },
     },
   },

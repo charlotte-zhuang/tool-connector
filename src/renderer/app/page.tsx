@@ -1,4 +1,4 @@
-import UsageInstructions from "@/app/usage-instructions";
+import UsageInstructions from "@/renderer/app/usage-instructions";
 
 export default function App() {
   return (

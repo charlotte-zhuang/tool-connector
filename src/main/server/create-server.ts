@@ -1,7 +1,7 @@
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import express, { Request, Response } from "express";
-import type { AppStore } from "@/store";
-import { createMcpServer } from "@/mcp";
+import type { AppStore } from "@/main/store";
+import { createMcpServer } from "@/main/mcp";
 
 /**
  * @returns cleanup function

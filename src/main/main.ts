@@ -1,7 +1,7 @@
-import type { ElectronApi, ElectronApiChannel } from "@/api";
-import { Configs } from "@/configs";
-import { createServer } from "@/server";
-import type { AppStoreValue } from "@/store";
+import type { ElectronApi, ElectronApiChannel } from "@/shared/api";
+import { Configs } from "@/shared/schemas";
+import { createServer } from "@/main/server";
+import type { AppStoreValue } from "@/main/store";
 import { app, BrowserWindow, ipcMain, IpcMainInvokeEvent } from "electron";
 import started from "electron-squirrel-startup";
 import Store from "electron-store";

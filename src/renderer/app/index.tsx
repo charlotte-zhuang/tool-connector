@@ -1,7 +1,5 @@
-import App from "@/app/app";
+import App from "@/renderer/app/page";
 import { createRoot } from "react-dom/client";
-
-import "@/app/index.css";
 
 const root = createRoot(document.body);
 

@@ -1,8 +1,8 @@
 // See the Electron documentation for details on how to use preload scripts:
 // https://www.electronjs.org/docs/latest/tutorial/process-model#preload-scripts
 
-import type { ElectronApi, ElectronApiChannel } from "@/api";
-import type { Configs } from "@/configs";
+import type { ElectronApi, ElectronApiChannel } from "@/shared/api";
+import type { Configs } from "@/shared/schemas";
 import { contextBridge, ipcRenderer } from "electron";
 
 contextBridge.exposeInMainWorld("electronAPI", {
