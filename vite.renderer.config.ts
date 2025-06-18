@@ -5,6 +5,11 @@ import { resolve } from "path";
 export default defineConfig({
   plugins: [react()],
   base: "./", // Important for Electron
+  resolve: {
+    alias: {
+      "@": resolve(__dirname, "./src"),
+    },
+  },
   build: {
     outDir: "dist-renderer",
     rollupOptions: {

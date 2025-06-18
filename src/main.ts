@@ -1,11 +1,11 @@
+import type { ElectronApi, ElectronApiChannel } from "@/api";
+import { Configs } from "@/configs";
+import { createServer } from "@/server";
+import type { AppStoreValue } from "@/store";
 import { app, BrowserWindow, ipcMain, IpcMainInvokeEvent } from "electron";
 import started from "electron-squirrel-startup";
-import path from "node:path";
-import { createServer } from "./server";
-import type { AppStoreValue } from "./store";
 import Store from "electron-store";
-import { Configs } from "./configs";
-import type { ElectronApi, ElectronApiChannel } from "./api";
+import path from "node:path";
 
 const store = new Store<AppStoreValue>({
   defaults: { configs: {} },
