@@ -1,4 +1,4 @@
-import { Configs } from "@/configs";
+import { Configs } from "@/shared/schemas";
 
 export type ElectronApi = {
   getConfigs: () => Promise<Configs>;
