@@ -1,7 +1,12 @@
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import express, { Request, Response } from "express";
-import type { AppStore } from "@/main/store";
+import {
+  getConfigsFromStore,
+  setConfigsInStore,
+  type AppStore,
+} from "@/main/store";
 import { createMcpServer } from "@/main/mcp";
+import { Configs } from "@/shared/schemas";
 
 /**
  * @returns cleanup function
@@ -20,7 +25,23 @@ export default function createServer({
     // to ensure complete isolation. A single instance would cause request ID collisions
     // when multiple clients connect concurrently.
 
-    const configs = store.get("configs");
+    let configs: Configs;
+    try {
+      configs = getConfigsFromStore(store);
+    } catch {
+      res.writeHead(500).end(
+        JSON.stringify({
+          jsonrpc: "2.0",
+          error: {
+            code: -32000,
+            message: "Failed to retrieve configs",
+          },
+          id: null,
+        })
+      );
+      return;
+    }
+
     const mcpServer = createMcpServer({ configs });
 
     const transport = new StreamableHTTPServerTransport({
@@ -62,7 +83,7 @@ export default function createServer({
   });
 
   // Start the express server
-  const server = app.listen(store.get("configs.port", 0), () => {
+  const server = app.listen(getConfigsFromStore(store).port ?? 0, () => {
     const address = server.address();
 
     if (typeof address !== "object") {
@@ -77,7 +98,14 @@ export default function createServer({
       return;
     }
 
-    store.set("configs.port", port);
+    try {
+      const configs = getConfigsFromStore(store);
+      configs.port = port;
+      setConfigsInStore(store, configs);
+    } catch {
+      console.error("Failed to save port to configs");
+    }
+
     console.log(`Tool connector listening on port ${port}`);
   });
 

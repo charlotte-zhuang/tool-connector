@@ -8,7 +8,7 @@ const RETRY_DELAY_MS = 1_000;
 
 async function bootstrap(): Promise<{ configs: BootStrappedConfigs }> {
   for (let i = 0; i < RETRY_LIMIT; i++) {
-    const configs = await window.electronAPI.getConfigs();
+    const { configs } = await window.electronAPI.getConfigs();
 
     if (areConfigsBootStrapped(configs)) {
       return { configs };
@@ -33,7 +33,6 @@ function BootstrapWrapper({ children }: Props) {
     let current = true;
 
     if (configsState === null) {
-      console.log("bootstrap()");
       bootstrap().then((bootstrapResult) => {
         if (!current) {
           return;

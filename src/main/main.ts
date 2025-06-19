@@ -1,7 +1,11 @@
 import type { ElectronApi, ElectronApiChannel } from "@/shared/api";
 import { Configs } from "@/shared/schemas";
 import { createServer } from "@/main/server";
-import type { AppStoreValue } from "@/main/store";
+import {
+  getConfigsFromStore,
+  setConfigsInStore,
+  type AppStoreValue,
+} from "@/main/store";
 import { app, BrowserWindow, ipcMain, IpcMainInvokeEvent } from "electron";
 import started from "electron-squirrel-startup";
 import Store from "electron-store";
@@ -20,14 +24,33 @@ if (started) {
 
 // IPC handlers
 
-function handleGetConfigs(): Configs {
-  return store.get("configs");
+function handleGetConfigs(): { configs: Configs } | { error: string } {
+  try {
+    return { configs: getConfigsFromStore(store) };
+  } catch {
+    // reset configs on error
+    return { error: "Failed to retrieve configs" };
+  }
 }
 
-function handleSetConfigs(_event: IpcMainInvokeEvent, configs: Configs): void {
-  store.set("configs", configs);
-  cleanupServer?.();
-  cleanupServer = createServer({ store });
+function handleSetConfigs(
+  _event: IpcMainInvokeEvent,
+  configs: Configs
+): { error?: string } {
+  try {
+    setConfigsInStore(store, configs);
+  } catch {
+    return { error: "Failed to save configs" };
+  }
+
+  try {
+    cleanupServer?.();
+    cleanupServer = createServer({ store });
+  } catch {
+    return { error: "Failed to restart server" };
+  }
+
+  return {};
 }
 
 // Setup

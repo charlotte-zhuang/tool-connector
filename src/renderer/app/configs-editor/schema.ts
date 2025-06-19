@@ -1,20 +1,30 @@
 import { z } from "zod";
 
 const mcpServerConfigBaseSchema = z.object({
-  name: z.string(),
+  name: z.string().min(1),
 });
 
 const urlMcpServerConfigSchema = mcpServerConfigBaseSchema.extend({
   kind: z.literal("url"),
   url: z.string().url(),
-  headers: z.record(z.string()).optional(),
+  headers: z.array(
+    z.object({
+      key: z.string().min(1),
+      value: z.string(),
+    })
+  ),
 });
 
 const commandMcpServerConfigSchema = mcpServerConfigBaseSchema.extend({
   kind: z.literal("command"),
   command: z.string().min(1),
-  args: z.array(z.string()).optional(),
-  env: z.record(z.string()).optional(),
+  args: z.string().optional(),
+  env: z.array(
+    z.object({
+      key: z.string().min(1),
+      value: z.string(),
+    })
+  ),
 });
 
 const mcpServerConfigSchema = z.discriminatedUnion("kind", [
@@ -22,9 +32,9 @@ const mcpServerConfigSchema = z.discriminatedUnion("kind", [
   commandMcpServerConfigSchema,
 ]);
 
-export const ConfigsSchema = z.object({
+export const FormSchema = z.object({
   port: z.coerce.number().int().min(0).max(65535).optional(),
-  mcp_servers: z.array(mcpServerConfigSchema).optional(),
+  mcp_servers: z.array(mcpServerConfigSchema),
 });
 
-export type Configs = z.infer<typeof ConfigsSchema>;
+export type FormValue = z.infer<typeof FormSchema>;
