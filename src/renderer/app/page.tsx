@@ -1,12 +1,22 @@
+import { useConfigsStore } from "@/renderer/stores/configs";
+import { memo } from "react";
 import ConfigsEditor from "./configs-editor";
 import UsageInstructions from "./usage-instructions";
 
-export default function App() {
+function Page() {
+  const configs = useConfigsStore((state) => state.configs);
+
+  if (configs === null) {
+    return null;
+  }
+
   return (
     <div>
       <UsageInstructions />
 
-      <ConfigsEditor />
+      <ConfigsEditor configs={configs} />
     </div>
   );
 }
+
+export default memo(Page);

@@ -1,4 +1,3 @@
-import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
@@ -8,14 +7,19 @@ import {
   FormLabel,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { getConfigs, setConfigs } from "@/renderer/api/configs";
+import { useConfigsController } from "@/renderer/controllers/configs";
 import { Configs, ConfigsSchema } from "@/shared/schemas";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { use } from "react";
+import { memo } from "react";
 import { useForm } from "react-hook-form";
+import { Button } from "@/components/ui/button";
 
-export default function ConfigsEditor() {
-  const configs = use(getConfigs());
+type Props = {
+  configs: Configs;
+};
+
+function ConfigsEditor({ configs }: Props) {
+  const { setConfigs } = useConfigsController();
 
   const form = useForm<Configs>({
     resolver: zodResolver(ConfigsSchema),
@@ -34,18 +38,33 @@ export default function ConfigsEditor() {
               <FormItem>
                 <FormLabel>Port</FormLabel>
                 <FormControl>
-                  <Input placeholder="3123" {...field} />
+                  <Input placeholder="Optional. example: 3619" {...field} />
                 </FormControl>
                 <FormDescription>
-                  The port on your machine that Tool Connector will use.
+                  The port on your computer that Tool Connector will use.
+                  Deleting this to reset the port can fix issues sometimes.
                 </FormDescription>
+                {form.formState.errors.port && (
+                  <p className="text-red-500 text-sm">
+                    {form.formState.errors.port.message}
+                  </p>
+                )}
               </FormItem>
             )}
           />
 
-          <Button type="submit">Save</Button>
+          <div className="flex gap-2 justify-end w-full">
+            <Button type="reset" variant="destructive" size="sm">
+              Reset
+            </Button>
+            <Button type="submit" size="sm">
+              Save
+            </Button>
+          </div>
         </form>
       </Form>
     </div>
   );
 }
+
+export default memo(ConfigsEditor);

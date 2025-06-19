@@ -18,7 +18,7 @@ const mcpServerConfigSchema = z.discriminatedUnion("kind", [
 ]);
 
 export const ConfigsSchema = z.object({
-  port: z.number().int().min(1).max(65535).optional(),
+  port: z.coerce.number().int().min(0).max(65535).optional(),
   mcp_servers: z.array(mcpServerConfigSchema).optional(),
 });
 

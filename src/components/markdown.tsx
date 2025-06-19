@@ -37,7 +37,9 @@ export default function MarkdownRenderer({
           return !inline && match ? (
             <div className="relative">
               <Button
-                className="absolute top-2 right-2 z-10 p-1 rounded text-xs w-6 h-6"
+                className="absolute top-2 right-2 z-10"
+                size="icon"
+                variant="ghost"
                 onClick={(event) => {
                   event.stopPropagation();
                   onCopy();
