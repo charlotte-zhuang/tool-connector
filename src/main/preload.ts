@@ -6,8 +6,8 @@ import type { Configs } from "@/shared/schemas";
 import { contextBridge, ipcRenderer } from "electron";
 
 contextBridge.exposeInMainWorld("electronAPI", {
-  getConfigs: (): Promise<Configs> =>
+  getConfigs: (): Promise<{ configs: Configs } | { error: string }> =>
     ipcRenderer.invoke("get-configs" satisfies ElectronApiChannel),
-  setConfigs: (configs: Configs): Promise<void> =>
+  setConfigs: (configs: Configs): Promise<{ error?: string }> =>
     ipcRenderer.invoke("set-configs" satisfies ElectronApiChannel, configs),
 } satisfies ElectronApi);
