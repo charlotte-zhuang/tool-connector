@@ -1,12 +1,14 @@
-import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
-import express, { Request, Response } from "express";
+import { createWrapperMcpServer } from "@/main/mcp";
 import {
   getConfigsFromStore,
   setConfigsInStore,
   type AppStore,
 } from "@/main/store";
-import { createMcpServer } from "@/main/mcp";
 import { Configs } from "@/shared/schemas";
+import { InMemoryEventStore } from "@modelcontextprotocol/sdk/examples/shared/inMemoryEventStore.js";
+import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
+import express, { Request, Response } from "express";
+import { randomUUID } from "node:crypto";
 
 /**
  * @returns cleanup function
@@ -18,68 +20,152 @@ export default function createServer({
 }): () => void {
   const app = express();
 
-  app.use(express.json());
+  const transports: Map<string, StreamableHTTPServerTransport> = new Map<
+    string,
+    StreamableHTTPServerTransport
+  >();
 
   app.post("/mcp", async (req: Request, res: Response) => {
-    // In stateless mode, create a new instance of transport and server for each request
-    // to ensure complete isolation. A single instance would cause request ID collisions
-    // when multiple clients connect concurrently.
-
     let configs: Configs;
     try {
       configs = getConfigsFromStore(store);
     } catch {
-      res.writeHead(500).end(
-        JSON.stringify({
-          jsonrpc: "2.0",
-          error: {
-            code: -32000,
-            message: "Failed to retrieve configs",
-          },
-          id: null,
-        })
-      );
+      res.status(500).json({
+        jsonrpc: "2.0",
+        error: {
+          code: -32000,
+          message: "Failed to retrieve configs",
+        },
+        id: null,
+      });
+      return;
+    }
+    // Check for existing session ID
+    const sessionId = req.headers["mcp-session-id"];
+    let transport: StreamableHTTPServerTransport;
+
+    if (typeof sessionId === "string" && transports.has(sessionId)) {
+      // Reuse existing transport
+      transport = transports.get(sessionId)!;
+    } else if (!sessionId) {
+      const wrapperMcpServer = await createWrapperMcpServer({
+        configs: configs.mcp_servers,
+      });
+
+      // New initialization request
+      const eventStore = new InMemoryEventStore();
+      transport = new StreamableHTTPServerTransport({
+        sessionIdGenerator: () => randomUUID(),
+        eventStore, // Enable resumability
+        onsessioninitialized: (sessionId: string) => {
+          // Store the transport by session ID when session is initialized
+          // This avoids race conditions where requests might come in before the session is stored
+          transports.set(sessionId, transport);
+        },
+      });
+
+      // Set up onclose handler to clean up transport when closed
+      const originalServerOnClose = wrapperMcpServer.server.onclose;
+      wrapperMcpServer.server.onclose = () => {
+        originalServerOnClose?.();
+        const sid = transport.sessionId;
+        if (sid) {
+          transports.delete(sid);
+        }
+      };
+
+      // Connect the transport to the MCP server BEFORE handling the request
+      // so responses can flow back through the same transport
+      await wrapperMcpServer.connect(transport);
+    } else {
+      // Invalid request - no session ID or not initialization request
+      res.status(400).json({
+        jsonrpc: "2.0",
+        error: {
+          code: -32000,
+          message: "Bad Request: No valid session ID provided",
+        },
+        id: req?.body?.id,
+      });
       return;
     }
 
-    const mcpServer = createMcpServer({ configs });
-
-    const transport = new StreamableHTTPServerTransport({
-      sessionIdGenerator: undefined,
-    });
-
-    res.on("close", () => {
-      transport.close();
-      mcpServer.close();
-    });
-    await mcpServer.connect(transport);
-    await transport.handleRequest(req, res, req.body);
+    await transport.handleRequest(req, res);
   });
 
-  app.get("/mcp", async (_req: Request, res: Response) => {
-    res.writeHead(405).end(
-      JSON.stringify({
+  app.get("/mcp", async (req: Request, res: Response) => {
+    const sessionId = req.headers["mcp-session-id"];
+    if (typeof sessionId !== "string") {
+      res.status(400).json({
         jsonrpc: "2.0",
         error: {
           code: -32000,
-          message: "Method not allowed.",
+          message: "Bad Request: No valid session ID provided",
         },
-        id: null,
-      })
-    );
-  });
+        id: req?.body?.id,
+      });
+      return;
+    }
 
-  app.delete("/mcp", async (_req: Request, res: Response) => {
-    res.writeHead(405).end(
-      JSON.stringify({
+    const transport = transports.get(sessionId);
+
+    if (!transport) {
+      res.status(400).json({
         jsonrpc: "2.0",
         error: {
           code: -32000,
-          message: "Method not allowed.",
+          message: "Bad Request: No valid session ID provided",
         },
-        id: null,
-      })
-    );
+        id: req?.body?.id,
+      });
+      return;
+    }
+
+    await transport.handleRequest(req, res);
+  });
+
+  app.delete("/mcp", async (req: Request, res: Response) => {
+    const sessionId = req.headers["mcp-session-id"];
+    if (typeof sessionId !== "string") {
+      res.status(400).json({
+        jsonrpc: "2.0",
+        error: {
+          code: -32000,
+          message: "Bad Request: No valid session ID provided",
+        },
+        id: req?.body?.id,
+      });
+      return;
+    }
+
+    const transport = transports.get(sessionId);
+    if (!transport) {
+      res.status(400).json({
+        jsonrpc: "2.0",
+        error: {
+          code: -32000,
+          message: "Bad Request: No valid session ID provided",
+        },
+        id: req?.body?.id,
+      });
+      return;
+    }
+
+    try {
+      await transport.handleRequest(req, res);
+    } catch (error) {
+      if (!res.headersSent) {
+        res.status(500).json({
+          jsonrpc: "2.0",
+          error: {
+            code: -32603,
+            message: "Error handling session termination",
+          },
+          id: req?.body?.id,
+        });
+        return;
+      }
+    }
   });
 
   // Start the express server
@@ -110,6 +196,11 @@ export default function createServer({
   });
 
   return () => {
+    // Close all active transports to properly clean up resources
+    void Promise.all(
+      transports.values().map((transport) => transport.close().catch(() => {}))
+    );
+
     server.close(() => {
       console.log("Tool connector closed");
     });

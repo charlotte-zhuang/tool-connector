@@ -1,3 +1,3 @@
-import createMcpServer from "./create-mcp-server";
+import createWrapperMcpServer from "./create-wrapper-mcp-server";
 
-export { createMcpServer };
+export { createWrapperMcpServer };
