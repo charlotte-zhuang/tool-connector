@@ -67,14 +67,14 @@ function ConfigsEditor() {
     let hasError = false;
 
     for (const [index, mcpServer] of values.mcp_servers.entries()) {
-      const serverName = mcpServer.name.trim();
+      const serverName = mcpServer.name.replaceAll(/[^a-zA-Z0-0_-]/g, "");
 
       if (serverName.length === 0) {
         form.setError(
           `mcp_servers.${index}.name`,
           {
             type: "manual",
-            message: "cannot be empty",
+            message: "must contain valid characters (a-z, A-Z, 0-9, _, -)",
           },
           { shouldFocus: true }
         );
@@ -84,7 +84,7 @@ function ConfigsEditor() {
           `mcp_servers.${index}.name`,
           {
             type: "manual",
-            message: "must be unique",
+            message: `must be unique (duplicate: ${serverName})`,
           },
           { shouldFocus: true }
         );

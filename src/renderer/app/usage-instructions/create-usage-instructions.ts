@@ -20,6 +20,8 @@ Add to \`claude_desktop_config.json\`. Requires \`npx\`.
   }
 }
 \`\`\`
+
+Claude Desktop requires a restart whenever you make changes to your configs.
 `.trim();
 }
 
