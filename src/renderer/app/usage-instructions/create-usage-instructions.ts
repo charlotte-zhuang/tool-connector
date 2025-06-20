@@ -4,7 +4,8 @@ type Args = {
 
 export function createClaudeDesktopUsageInstructions({ port }: Args): string {
   return `
-Add to \`claude_desktop_config.json\`. Requires \`npx\`.
+Install \`npx\` if needed, then add this to your \`claude_desktop_config.json\`.
+
 \`\`\`json
 {
   "mcpServers": {
@@ -29,24 +30,15 @@ export function createVisualStudioCodeUsageInstructions({
   port,
 }: Args): string {
   return `
-Add to your settings JSON file or \`.vscode/mcp.json\` (omit "mcp" when adding to \`.vscode/mcp.json\`). Requires \`npx\`.
+Install \`npx\` if needed.
 
-\`\`\`json
-{
-  "mcp": {
-    "servers": {
-      "tool-connector": {
-        "command": "npx",
-        "args": [
-          "-y",
-          "supergateway",
-          "--streamableHttp",
-          "http://localhost:${port}/mcp"
-        ]
-      }
-    }
-  }
-}
+In VS Code, Press CMD+Shift+P (or Ctrl+Shift+P on Windows/Linux) and type "MCP: Add Server".
+
+Select Command (stdio) and enter this command:
+
+\`\`\`text
+
+npx supergateway --streamableHttp http://localhost:${port}/mcp
 \`\`\`
 `.trim();
 }
@@ -56,6 +48,7 @@ export function createLocalMcpUrlUsageInstructions({ port }: Args): string {
 If your app supports integrating with a local MCP server via a URL, simply provide this URL:
 
 \`\`\`text
+
 http://localhost:${port}/mcp
 \`\`\`
 `.trim();
