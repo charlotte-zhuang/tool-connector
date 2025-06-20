@@ -22,7 +22,7 @@ Now each new integration connects to every app on your computer and every new ap
 
 ## Development
 
-Just run `npm start` in the root of this repository to start the Electron.js app. The app iteself displays instructions on how to use it.
+This is an Electron.js app. Just run `npm install` and then `npm start` in the root of this repository to check it out.
 
 ### Goals
 
