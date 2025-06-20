@@ -39,7 +39,7 @@ import {
   ToolListChangedNotificationSchema,
   UnsubscribeRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
-import { unwrapUri, wrapNameWithServer, wrapUriWithServer } from "./conversion";
+import { unwrapUri, wrapUriWithServer } from "./conversion";
 
 const MAX_NAME_LENGTH = 64;
 
@@ -53,10 +53,7 @@ function createUniqueName({
   map: Map<string, unknown>;
 }): string | null {
   // make a unique name
-  let uniqueName = wrapNameWithServer({
-    serverName,
-    name,
-  }).substring(0, MAX_NAME_LENGTH);
+  let uniqueName = `${serverName}-${name}`.substring(0, MAX_NAME_LENGTH);
 
   let i = 1;
   while (map.has(uniqueName)) {

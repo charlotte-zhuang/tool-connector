@@ -1,30 +1,3 @@
-export function wrapNameWithServer({
-  serverName,
-  name,
-}: {
-  serverName: string;
-  name: string;
-}): string {
-  return `${serverName}-${name}`;
-}
-
-export function unwrapName({ name }: { name: string }): {
-  serverName?: string;
-  name: string;
-} {
-  const parts = name.split("-");
-
-  // No server prefix
-  if (parts.length < 2) {
-    return { name };
-  }
-
-  return {
-    serverName: parts[0],
-    name: parts.slice(1).join("-"),
-  };
-}
-
 export function wrapUriWithServer({
   serverName,
   uri,
@@ -34,12 +7,9 @@ export function wrapUriWithServer({
 }): string {
   const parts = uri.split("://");
 
-  // invalid URI. treat it like a name
+  // invalid URI
   if (parts.length < 2) {
-    return wrapNameWithServer({
-      serverName,
-      name: uri,
-    });
+    return uri;
   }
 
   return `${parts[0]}://${serverName}/${parts.slice(1).join("://")}`;
@@ -51,12 +21,10 @@ export function unwrapUri({ uri }: { uri: string }): {
 } {
   const [protocol, ...protocolSplitParts] = uri.split("://");
 
-  // invalid URI. treat it like a name
+  // invalid URI
   if (protocol === undefined || protocolSplitParts.length === 0) {
-    const res = unwrapName({ name: uri });
     return {
-      serverName: res.serverName,
-      uri: res.name,
+      uri,
     };
   }
 
@@ -67,7 +35,6 @@ export function unwrapUri({ uri }: { uri: string }): {
   // No server prefix
   if (pathParts.length < 2) {
     return {
-      serverName: undefined,
       uri,
     };
   }
