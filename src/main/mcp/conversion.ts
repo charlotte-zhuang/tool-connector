@@ -1,3 +1,56 @@
+export function wrapProgressTokenWithServer({
+  serverName,
+  progressToken,
+}: {
+  serverName: string;
+  progressToken: string | number;
+}): string {
+  return `${serverName}-${typeof progressToken}-${progressToken}`;
+}
+
+export function unwrapProgressToken({
+  progressToken,
+}: {
+  progressToken: string | number;
+}): {
+  serverName?: string;
+  progressToken: string | number;
+} {
+  // not wrapped
+  if (typeof progressToken !== "string") {
+    return {
+      progressToken,
+    };
+  }
+
+  const parts = progressToken.split("-");
+
+  // not wrapped
+  if (parts.length < 3) {
+    return {
+      progressToken,
+    };
+  }
+
+  const [serverName, progressTokenType] = parts;
+  const progressTokenValue = parts.slice(2).join("-");
+
+  try {
+    return {
+      serverName,
+      progressToken:
+        progressTokenType === "number"
+          ? Number(progressTokenValue)
+          : progressTokenValue,
+    };
+  } catch {
+    // not wrapped or invalid
+    return {
+      progressToken,
+    };
+  }
+}
+
 export function wrapUriWithServer({
   serverName,
   uri,
