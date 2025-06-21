@@ -34,8 +34,6 @@ This is an Electron.js app. Just run `npm install` and then `npm start` in the r
 
 [ ] 🔑 OAuth support
 
-[ ] 💬 Chat completion support
-
 #### User Experience
 
 [ ] 🌑 Dark mode
