@@ -1,6 +1,6 @@
-const test = require('node:test');
-const assert = require('node:assert/strict');
-const { wrapUriWithServer, unwrapUri } = require('../src/main/mcp/conversion.ts');
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { wrapUriWithServer, unwrapUri } from '@/main/mcp/conversion';
 
 const serverName = 'myServer';
 const originalUri = 'https://example.com/path';
