@@ -284,7 +284,7 @@ export default async function createWrapperMcpServer({
     const defaultEnv = getDefaultEnvironment();
     server.server.oninitialized = async () => {
       // we need to wait until after the wrapper server connects to the actual client
-      // to properly advertize capabilities and prevent requests from coming too soon
+      // to properly advertise capabilities and prevent requests from coming too soon
 
       const clientCapabilities = server.server.getClientCapabilities();
       const clientVersion = server.server.getClientVersion();
