@@ -206,7 +206,7 @@ export default function McpServerFormField({
                     <div className="flex flex-col gap-2">
                       <label
                         className={cn("text-sm font-medium", {
-                          "test-red-500": !!typeCastedErrors?.env?.message,
+                          "text-red-500": !!typeCastedErrors?.env?.message,
                         })}
                       >
                         Environment Variables
@@ -331,7 +331,7 @@ export default function McpServerFormField({
                     <div className="flex flex-col gap-2">
                       <label
                         className={cn("text-sm font-medium", {
-                          "test-red-500": !!typeCastedErrors?.headers?.message,
+                          "text-red-500": !!typeCastedErrors?.headers?.message,
                         })}
                       >
                         Headers
