@@ -67,7 +67,7 @@ function ConfigsEditor() {
     let hasError = false;
 
     for (const [index, mcpServer] of values.mcp_servers.entries()) {
-      const serverName = mcpServer.name.replaceAll(/[^a-zA-Z0-0_-]/g, "");
+      const serverName = mcpServer.name.replaceAll(/[^a-zA-Z0-9_-]/g, "");
 
       if (serverName.length === 0) {
         form.setError(
